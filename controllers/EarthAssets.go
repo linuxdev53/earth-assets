@@ -5,83 +5,98 @@ import (
 	"strconv"
 	"time"
 
-	"earth-assets/common"
-	"earth-assets/models"
-	"earth-assets/views"
+	"earth-assets/middleware"
 
 	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/mvc"
 )
 
-func EarthAssets(ctx iris.Context) {
-	params := models.NewEarthAssetsParams()
+// EarthAssets represents API controller
+type EarthAssets struct {
+	Ctx iris.Context
+}
 
-	// parse earth assets parameters and set param for nasa api
-	lat := ctx.FormValue("lat")
+// Get handles GET: http://localhost:8080/api/EarthAssets
+func (e *EarthAssets) Get(ctx iris.Context) mvc.Result {
+	var (
+		lat          = ctx.FormValue("lat")
+		lon          = ctx.FormValue("lon")
+		date         = ctx.FormValue("date")
+		dim          = ctx.FormValue("dim")
+		apiKey       = ctx.FormValue("api_key")
+		err    error = nil
+	)
+
+	// set params from form value
+	params := middleware.NewEarthAssetsParams()
 	if len(lat) > 0 {
 		fLatitude, err := strconv.ParseFloat(lat, 32)
-		if err != nil {
-			fmt.Printf("Invalid latitude field:%s\n", lat)
-			views.SendResponse(ctx, iris.StatusBadRequest, common.ErrUnknown, nil)
-			return
+		if err == nil {
+			params.Latitude = float32(fLatitude)
 		}
-		params.Latitude = float32(fLatitude)
 	}
 
-	lon := ctx.FormValue("lon")
 	if len(lon) > 0 {
 		fLongitude, err := strconv.ParseFloat(lon, 32)
-		if err != nil {
-			fmt.Printf("Invalid longitude field:%s\n", lon)
-			views.SendResponse(ctx, iris.StatusBadRequest, common.ErrUnknown, nil)
-			return
+		if err == nil {
+			params.Longitude = float32(fLongitude)
 		}
-		params.Longitude = float32(fLongitude)
 	}
 
-	date := ctx.FormValue("date")
 	if len(date) > 0 {
 		_, err := time.Parse("2006-01-02", date)
-		if err != nil {
-			fmt.Printf("Invalid date field:%s with err:%v\n", date, err)
-			views.SendResponse(ctx, iris.StatusBadRequest, common.ErrUnknown, nil)
-			return
+		if err == nil {
+			params.Date = date
 		}
-		params.Date = date
 	}
 
-	dim := ctx.FormValue("dim")
 	if len(dim) > 0 {
 		fDim, err := strconv.ParseFloat(dim, 32)
-		if err != nil {
-			fmt.Printf("Invalid degrees field:%s\n", dim)
-			views.SendResponse(ctx, iris.StatusBadRequest, common.ErrUnknown, nil)
-			return
+		if err == nil {
+			params.Degrees = float32(fDim)
 		}
-		params.Degrees = float32(fDim)
 	}
 
-	apiKey := ctx.FormValue("api_key")
 	if len(apiKey) > 0 {
 		params.ApiKey = apiKey
 	}
 
+	if err != nil {
+		fmt.Printf("Failed to parse parameter with err:%v\n", err)
+		return mvc.View{
+			Name: "assets/error.html",
+			Data: iris.Map{
+				"Message": fmt.Sprintf("%v", err),
+			},
+		}
+	}
+
 	// call Nasa API
-	resp, err := models.GetNasaApiResponse(params)
+	resp, err := middleware.GetNasaApiResponse(params)
 	if err != nil {
 		fmt.Printf("Failed to get nasa API response with err:%v\n", err)
-		views.SendResponse(ctx, iris.StatusOK, common.ErrNasaApi, nil)
-		return
-	}
-	fmt.Sprintf("resp:%v\n", resp)
-
-	// generate HTML file
-	err = views.ParseTemplate(resp)
-	if err != nil {
-		fmt.Printf("Failed to generate HTML content with err:%v\n", err)
-		views.SendResponse(ctx, iris.StatusOK, common.ErrHTMLInvalid, nil)
-		return
+		return mvc.View{
+			Name: "assets/error.html",
+			Data: iris.Map{
+				"Message": fmt.Sprintf("%v", err),
+			},
+		}
 	}
 
-	ctx.StatusCode(iris.StatusOK)
-	ctx.ServeFile(common.IndexHTML, false)
+	// when image isn't exist, then return eror message
+	if len(resp.URL) == 0 {
+		return mvc.View{
+			Name: "assets/error.html",
+			Data: iris.Map{
+				"Message": resp.Msg,
+			},
+		}
+	}
+
+	return mvc.View{
+		Name: "assets/index.html",
+		Data: iris.Map{
+			"URL": resp.URL,
+		},
+	}
 }

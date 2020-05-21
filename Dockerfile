@@ -17,5 +17,5 @@ RUN go install
 FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /go/bin/earth-assets .
-COPY --from=builder /go/src/earth-assets/assets ./assets
+COPY --from=builder /go/src/earth-assets/views ./views
 ENTRYPOINT ["./earth-assets"]
