@@ -1,0 +1,8 @@
+# docker-compose up [--build]
+version: '3'
+
+services:
+  earth-assets:
+    build: .
+    ports:
+      - 8080:8080

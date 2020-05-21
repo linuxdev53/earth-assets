@@ -1,7 +1,7 @@
 package common
 
 const (
-	ListenAddr = "localhost:8080"
+	ListenAddr = ":8080"
 
 	IndexHTML      = "./assets/index.html"
 	IndexHTMLTempl = "./assets/index.html.tmpl"
