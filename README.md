@@ -1,5 +1,7 @@
 # Amazing visualization of the acquisition pattern for Landsat 8 imagery
 
+[![Build Status](https://travis-ci.com/linuxdev53/earth-assets.svg?branch=master)](https://travis-ci.com/linuxdev53/earth-assets)
+
 This endpoint retrieves the date-times and asset names for closest available imagery for a supplied location and date. The satellite passes over each point on earth roughly once every sixteen days. This is an amazing visualization of the acquisition pattern for Landsat 8 imagery. The objective of this endpoint is primarily to support the use of the imagery endpoint.
 
 It uses nasa API endpoint for Earth->Assets.(https://api.nasa.gov/)
